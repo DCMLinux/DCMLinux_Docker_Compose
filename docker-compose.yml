@@ -1,0 +1,94 @@
+version: "3"
+services:
+  ldap:
+    image: dcmlinux/slapd-dcm4chee:latest
+    restart: always
+    networks:
+        - network
+    logging:
+        driver: json-file
+        options:
+            max-size: "10m"
+    expose:
+        - "389"
+    env_file: docker-compose.env
+    volumes:
+        - /var/local/dcmlinux/ldap:/var/lib/openldap/openldap-data
+        - /var/local/dcmlinux/slapd.d:/etc/openldap/slapd.d
+    deploy:
+        resources:
+            limits:
+                cpus: '1'
+                memory: 512M
+            reservations:
+               #cpus: '0.5'
+                memory: 128M
+  db:
+    image: dcmlinux/postgres-dcm4chee:latest
+    restart: always
+    networks:
+        - network
+    logging:
+        driver: json-file
+        options:
+            max-size: "10m"
+    expose:
+        - "5432"
+    env_file: docker-compose.env
+    volumes:
+        - /etc/localtime:/etc/localtime:ro
+        - /etc/timezone:/etc/timezone:ro
+        - /var/local/dcmlinux/postgresql:/var/lib/postgresql/data
+    deploy:
+        resources:
+            limits:
+                cpus: '2'
+                memory: 1024M
+            reservations:
+                memory: 256M
+  arc:
+    image: dcmlinux/dcm4chee-arc-psql:latest
+    restart: always
+    networks:
+        - network
+    logging:
+        driver: json-file
+        options:
+            max-size: "10m"
+    ports:
+        #Remove the following comments to expose these ports to the public
+        - "8080:8080"
+        - "8443:8443"
+        - "9990:9990"
+        - "9993:9993"
+        - "11112:11112"
+        - "2762:2762"
+        - "2575:2575"
+        - "12575:12575"
+    expose: 
+        - "8080"
+        - "8443"
+        - "9990"
+        - "9993"
+    env_file: docker-compose.env
+    environment:
+      WILDFLY_CHOWN: /opt/wildfly/standalone /storage
+      WILDFLY_WAIT_FOR: ldap:389 db:5432
+    depends_on:
+        - ldap
+        - db
+    volumes:
+        - /etc/localtime:/etc/localtime:ro
+        - /etc/timezone:/etc/timezone:ro
+        - /var/local/dcmlinux/wildfly:/opt/wildfly/standalone
+        - /var/local/dcmlinux/storage:/storage
+    deploy:
+        resources:
+            limits:
+                cpus: '1'
+                memory: 2048M
+            reservations:
+                memory: 1024M
+networks:
+    network:
+        driver: bridge
