@@ -15,14 +15,14 @@ services:
     volumes:
         - /var/local/dcmlinux/ldap:/var/lib/openldap/openldap-data
         - /var/local/dcmlinux/slapd.d:/etc/openldap/slapd.d
-    deploy:
-        resources:
-            limits:
-                cpus: '1'
-                memory: 512M
-            reservations:
-               #cpus: '0.5'
-                memory: 128M
+    # deploy:
+    #     resources:
+    #         limits:
+    #             cpus: '1'
+    #             memory: 512M
+    #         reservations:
+    #            #cpus: '0.5'
+    #             memory: 128M
   db:
     image: dcmlinux/postgres-dcm4chee:latest
     restart: always
@@ -39,13 +39,13 @@ services:
         - /etc/localtime:/etc/localtime:ro
         - /etc/timezone:/etc/timezone:ro
         - /var/local/dcmlinux/postgresql:/var/lib/postgresql/data
-    deploy:
-        resources:
-            limits:
-                cpus: '2'
-                memory: 1024M
-            reservations:
-                memory: 256M
+    # deploy:
+    #     resources:
+    #         limits:
+    #             cpus: '2'
+    #             memory: 1024M
+    #         reservations:
+    #             memory: 256M
   arc:
     image: dcmlinux/dcm4chee-arc-psql:latest
     restart: always
@@ -82,13 +82,13 @@ services:
         - /etc/timezone:/etc/timezone:ro
         - /var/local/dcmlinux/wildfly:/opt/wildfly/standalone
         - /var/local/dcmlinux/storage:/storage
-    deploy:
-        resources:
-            limits:
-                cpus: '1'
-                memory: 2048M
-            reservations:
-                memory: 1024M
+    # deploy:
+    #     resources:
+    #         limits:
+    #             cpus: '1'
+    #             memory: 2048M
+    #         reservations:
+    #             memory: 1024M
 networks:
     network:
         driver: bridge
