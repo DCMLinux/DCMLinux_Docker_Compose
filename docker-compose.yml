@@ -56,8 +56,8 @@ services:
         networks:
             - network
         env_file: docker-compose.env
-        ports:
-            #- "3306:3306"
+        # ports:
+        #     - "3306:3306"
         expose:
             - "3306"
         logging:
