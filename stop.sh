@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker-compose stop -p dcmlinux
+docker-compose -p dcmlinux stop
