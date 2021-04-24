@@ -1,94 +1,177 @@
 version: "3"
 services:
-  ldap:
-    image: dcmlinux/slapd-dcm4chee:latest
-    restart: always
-    networks:
-        - network
-    logging:
-        driver: json-file
-        options:
-            max-size: "10m"
-    expose:
-        - "389"
-    env_file: docker-compose.env
-    volumes:
-        - /var/local/dcmlinux/ldap:/var/lib/openldap/openldap-data
-        - /var/local/dcmlinux/slapd.d:/etc/openldap/slapd.d
-    # deploy:
-    #     resources:
-    #         limits:
-    #             cpus: '1'
-    #             memory: 512M
-    #         reservations:
-    #            #cpus: '0.5'
-    #             memory: 128M
-  db:
-    image: dcmlinux/postgres-dcm4chee:latest
-    restart: always
-    networks:
-        - network
-    logging:
-        driver: json-file
-        options:
-            max-size: "10m"
-    expose:
-        - "5432"
-    env_file: docker-compose.env
-    volumes:
-        - /etc/localtime:/etc/localtime:ro
-        - /etc/timezone:/etc/timezone:ro
-        - /var/local/dcmlinux/postgresql:/var/lib/postgresql/data
-    # deploy:
-    #     resources:
-    #         limits:
-    #             cpus: '2'
-    #             memory: 1024M
-    #         reservations:
-    #             memory: 256M
-  arc:
-    image: dcmlinux/dcm4chee-arc-psql:latest
-    restart: always
-    networks:
-        - network
-    logging:
-        driver: json-file
-        options:
-            max-size: "10m"
-    ports:
-        #Remove the following comments to expose these ports to the public
-        - "8080:8080"
-        - "8443:8443"
-        - "9990:9990"
-        - "9993:9993"
-        - "11112:11112"
-        - "2762:2762"
-        - "2575:2575"
-        - "12575:12575"
-    expose: 
-        - "8080"
-        - "8443"
-        - "9990"
-        - "9993"
-    env_file: docker-compose.env
-    environment:
-      WILDFLY_CHOWN: /opt/wildfly/standalone /storage
-      WILDFLY_WAIT_FOR: ldap:389 db:5432
-    depends_on:
-        - ldap
-        - db
-    volumes:
-        - /etc/localtime:/etc/localtime:ro
-        - /etc/timezone:/etc/timezone:ro
-        - /var/local/dcmlinux/wildfly:/opt/wildfly/standalone
-        - /var/local/dcmlinux/storage:/storage
-    # deploy:
-    #     resources:
-    #         limits:
-    #             cpus: '1'
-    #             memory: 2048M
-    #         reservations:
-    #             memory: 1024M
+    nginx:
+        image: dcmlinux/nginx:latest
+        restart: always
+        networks:
+            - network
+        ports:
+            - "80:80"
+            - "443:443"
+        logging:
+            driver: json-file
+            options:
+                max-size: "10m"
+        volumes: 
+            - ./certs:/dcmlinux/certs
+            - /var/local/dcmlinux/storage:/storage
+        depends_on:
+            - dcmlinux_manager
+        deploy:
+            resources:
+                limits:
+                    cpus: '1'
+                    memory: 512M
+                reservations:
+                    #cpus: '0.5'
+                    memory: 128M
+    dcmlinux_manager:
+        image: dcmlinux/dcmlinux-manager:latest
+        restart: always
+        networks:
+            - network
+        env_file: docker-compose.env
+        depends_on:
+            - db-dcmlinux
+        cap_add:
+            - SYS_ADMIN
+        logging:
+            driver: json-file
+            options:
+                max-size: "10m"
+        volumes: 
+            - ./certs:/src/certs
+            - /var/local/dcmlinux/storage:/storage
+        deploy:
+            resources:
+                limits:
+                    cpus: '1'
+                    memory: 512M
+                reservations:
+                    #cpus: '0.5'
+                    memory: 128M
+    db-dcmlinux:
+        image: dcmlinux/mysql
+        restart: always
+        networks:
+            - network
+        env_file: docker-compose.env
+        ports:
+            - "3306:3306"
+        expose:
+            - "3306"
+        logging:
+            driver: json-file
+            options:
+                max-size: "10m"
+        volumes: 
+            - /var/local/dcmlinux/mysql:/var/lib/mysql
+        deploy:
+            resources:
+                limits:
+                    cpus: '2'
+                    memory: 1024M
+                reservations:
+                    #cpus: '1'
+                    memory: 256M
+    ldap:
+        image: dcmlinux/slapd-dcm4chee:latest
+        restart: always
+        networks:
+            - network
+        logging:
+            driver: json-file
+            options:
+                max-size: "10m"
+        expose:
+            - "389"
+        env_file: docker-compose.env
+        volumes:
+            - /var/local/dcmlinux/ldap:/var/lib/openldap/openldap-data
+            - /var/local/dcmlinux/slapd.d:/etc/openldap/slapd.d
+        deploy:
+            resources:
+                limits:
+                    cpus: '1'
+                    memory: 512M
+                reservations:
+                   #cpus: '0.5'
+                    memory: 128M
+    db:
+        image: dcmlinux/postgres-dcm4chee:latest
+        restart: always
+        networks:
+            - network
+        logging:
+            driver: json-file
+            options:
+                max-size: "10m"
+        ports:
+            - "5432:5432"
+        expose:
+            - "5432"
+        env_file: docker-compose.env
+        volumes:
+            - /etc/localtime:/etc/localtime:ro
+            - /etc/timezone:/etc/timezone:ro
+            - /var/local/dcmlinux/postgresql:/var/lib/postgresql/data
+        deploy:
+            resources:
+                limits:
+                    cpus: '2'
+                    memory: 1024M
+                reservations:
+                    # cpus: '1'
+                    memory: 256M
+    arc:
+        image: dcmlinux/dcm4chee-arc-psql-dcmlinux:latest
+        restart: always
+        networks:
+            - network
+        logging:
+            driver: json-file
+            options:
+                max-size: "10m"
+        ports:
+            #Remove the following comments to expose these ports to the public
+            - "8080:8080"
+            # - "8443:8443"
+            # - "9990:9990"
+            # - "9993:9993"
+            # - "3001:3001"
+            - "11112:11112"
+            - "2762:2762"
+            - "2575:2575"
+            - "12575:12575"
+        expose: 
+            - "8080"
+            - "3001"
+            - "8443"
+            - "9990"
+            - "9993"
+        env_file: docker-compose.env
+        cap_add:
+            - SYS_ADMIN
+        depends_on:
+            - ldap
+            - db
+        volumes:
+            - /etc/localtime:/etc/localtime:ro
+            - /etc/timezone:/etc/timezone:ro
+            - /var/local/dcmlinux/wildfly:/opt/wildfly/standalone
+            - /var/local/dcmlinux/storage:/storage
+            - ./certs:/dcmlinux/certs
+        deploy:
+            resources:
+                limits:
+                    cpus: '1'
+                    memory: 2048M
+                reservations:
+                    # cpus: '0.5'
+                    memory: 1024M
 networks:
     network:
         driver: bridge
+        #driver_opts:
+            #com.docker.network.bridge.enable_ip_masquerade: 'false'
+        
