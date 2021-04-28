@@ -35,6 +35,8 @@ services:
             - db-dcmlinux
         cap_add:
             - SYS_ADMIN
+            - DAC_READ_SEARCH
+            - MKNOD
         logging:
             driver: json-file
             options:
@@ -152,6 +154,8 @@ services:
         env_file: docker-compose.env
         cap_add:
             - SYS_ADMIN
+            - DAC_READ_SEARCH
+            - MKNOD
         depends_on:
             - ldap
             - db
